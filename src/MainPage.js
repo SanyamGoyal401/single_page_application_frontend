@@ -15,6 +15,7 @@ const MainPage = () => {
     note: '',
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [isAddingForm, setIsAddingForm] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,15 +46,28 @@ const MainPage = () => {
     };
 
     fetchForms();
-  }, []);
+  }, [showModal]);
 
   const handleCardClick = (form) => {
     setSelectedForm(form);
     setShowModal(true);
   };
 
+  const handleAddClick = () => {
+    setIsAddingForm(true);
+    setShowModal(true);
+  }
+
   const handleModalClose = () => {
     setShowModal(false);
+    setSelectedForm({
+      _id: '',
+      email: '',
+      phone: '',
+      title: '',
+      note: '',
+    });
+    setIsAddingForm(false);
   };
 
   const handleLogout = () => {
@@ -75,13 +89,26 @@ const MainPage = () => {
 
         // Fetch updated forms after the update
         handleModalClose();
-        if(result.ok){
-            const response = await fetch('/form');
-            const data = await response.json();
-            setForms(data.forms);
-        }
     } catch (error) {
       console.error('Error updating form:', error);
+    }
+  };
+
+  const handleAddForm = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const result = await fetch(BACKEND_URL + '/form/add', {
+        method: 'POST',
+        headers: {
+        'Content-Type': 'application/json',
+        'authorization': token,
+        },
+        body: JSON.stringify(selectedForm),
+    });
+      setShowModal(false);
+      setIsAddingForm(false);
+    } catch (error) {
+      console.error('Error adding form:', error);
     }
   };
 
@@ -92,7 +119,10 @@ const MainPage = () => {
           <Navbar.Brand>SPA Website</Navbar.Brand>
         </Navbar.Collapse>
         <Navbar.Collapse className="justify-content-end">
-          <Button variant="danger" className="logout-button" onClick={() => handleLogout()}>
+        <Button variant="success" className="mx-2" onClick={() => handleAddClick()}>
+            Add Form
+          </Button>
+          <Button variant="danger" className="logout-button mx-2" onClick={() => handleLogout()}>
             Logout
           </Button>
         </Navbar.Collapse>
@@ -121,7 +151,7 @@ const MainPage = () => {
 
       <Modal show={showModal} onHide={handleModalClose}>
         <Modal.Header closeButton>
-          <Modal.Title>Edit Form</Modal.Title>
+          <Modal.Title>{isAddingForm ? 'Add Form' : 'Edit Form'}</Modal.Title>
         </Modal.Header>
         <Modal.Body>
           <Form>
@@ -168,9 +198,15 @@ const MainPage = () => {
           </Form>
         </Modal.Body>
         <Modal.Footer>
-          <Button variant="primary" onClick={handleUpdateForm}>
-            Update
-          </Button>
+        {isAddingForm ? (
+            <Button variant="success" onClick={handleAddForm}>
+              Add
+            </Button>
+          ) : (
+            <Button variant="primary" onClick={handleUpdateForm}>
+              Update
+            </Button>
+          )}
           <Button variant="secondary" onClick={handleModalClose}>
             Cancel
           </Button>
